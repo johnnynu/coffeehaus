@@ -69,7 +69,7 @@ Search for coffee shops in the database.
 Get details for a specific coffee shop.
 
 #### POST `/api/coffee-shops/discover`
-Discover new coffee shops from Google Places and Yelp APIs.
+Discover new coffee shops from Google Places API.
 
 **Request Body:**
 ```json
@@ -124,7 +124,6 @@ Get autocomplete suggestions for coffee shop search.
 
 ### Services
 - **GooglePlacesService**: Integration with Google Places API
-- **YelpService**: Integration with Yelp Fusion API
 - **DiscoveryService**: Orchestrates data from multiple APIs and stores in database
 
 ### Models
@@ -143,7 +142,7 @@ See `database/schema.sql` for the complete PostgreSQL schema with PostGIS extens
 
 ✅ Hono.js TypeScript backend setup  
 ✅ Supabase PostgreSQL database integration  
-✅ SerpAPI integration (Google Places + Yelp data)  
+✅ Google Places API
 ✅ Coffee shop search with filters (rating, distance, price)  
 ✅ Location-based search with radius  
 ✅ Autocomplete search functionality  
