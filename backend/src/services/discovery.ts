@@ -76,32 +76,50 @@ export class DiscoveryService {
     query: string,
     locationString?: string,
     radius: number = 5000
-  ): Promise<{ added: number; updated: number; errors: string[]; location?: { lat: number; lng: number } }> {
-    const results = { added: 0, updated: 0, errors: [] as string[], location: undefined as { lat: number; lng: number } | undefined };
+  ): Promise<{
+    added: number;
+    updated: number;
+    errors: string[];
+    location?: { lat: number; lng: number };
+  }> {
+    const results = {
+      added: 0,
+      updated: 0,
+      errors: [] as string[],
+      location: undefined as { lat: number; lng: number } | undefined,
+    };
 
     try {
       let coordinates: { lat: number; lng: number } | undefined = undefined;
 
       // If location string is provided, geocode it first
       if (locationString) {
-        const geocodeResult = await this.serpApi.geocodeLocation(locationString);
+        const geocodeResult = await this.serpApi.geocodeLocation(
+          locationString
+        );
         if (!geocodeResult) {
-          results.errors.push(`Could not find coordinates for location: ${locationString}`);
+          results.errors.push(
+            `Could not find coordinates for location: ${locationString}`
+          );
           return results;
         }
         coordinates = geocodeResult;
         results.location = geocodeResult;
       }
 
-      // Use the existing discovery method with coordinates
-      const discoveryResults = await this.discoverAndStoreCoffeeShops(query, coordinates, radius);
-      
+      const discoveryResults = await this.discoverAndStoreCoffeeShops(
+        query,
+        coordinates,
+        radius
+      );
+
       return {
         ...discoveryResults,
-        location: results.location
+        location: results.location,
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       console.error("Discovery by location string error:", error);
       results.errors.push(`Discovery error: ${errorMessage}`);
       return results;
@@ -170,5 +188,12 @@ export class DiscoveryService {
 
       google_place_id: incoming.google_place_id || existing.google_place_id,
     };
+  }
+
+  // Geocode locations
+  async geocodeLocation(
+    locationString: string
+  ): Promise<{ lat: number; lng: number } | null> {
+    return await this.serpApi.geocodeLocation(locationString);
   }
 }

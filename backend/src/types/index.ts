@@ -52,6 +52,7 @@ export interface SearchFilters {
   categories?: string[]
   limit?: number
   offset?: number
+  location_string?: string
 }
 
 export interface SearchResult {
