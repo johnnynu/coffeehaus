@@ -1,12 +1,15 @@
 import { Hono } from "hono";
 import { CoffeeShopModel } from "@/models/CoffeeShop";
 import { DiscoveryService } from "@/services/discovery";
+import { IntentDetectionService } from "@/services/intentDetection";
 import { SearchFilters } from "@/types";
 
 const coffeeShops = new Hono();
 const SERP_API_KEY = process.env.SERP_API_KEY!;
+const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY!;
 
 const discoveryService = new DiscoveryService(SERP_API_KEY);
+const intentService = new IntentDetectionService(CLAUDE_API_KEY);
 
 // Search coffee shops
 coffeeShops.get("/", async (c) => {
@@ -51,6 +54,55 @@ coffeeShops.get("/", async (c) => {
 
         const radiusMeters = radius ? parseInt(radius) : 50000; // Default 50km
 
+        // Detect search intent using Claude API
+        const searchIntent = await intentService.detectSearchIntentCached(query);
+
+        // Handle specific shop search
+        if (searchIntent === 'specific') {
+          // 1. Search for specific shop in database
+          let specificShopResults = await CoffeeShopModel.findSpecificShop(
+            query,
+            locationCoords,
+            radiusMeters
+          );
+
+          // 2. If no results found, run discovery and search again
+          if (specificShopResults.length === 0) {
+            await discoveryService.discoverAndStoreCoffeeShopsByLocationString(
+              query,
+              locationString || `${locationCoords.lat},${locationCoords.lng}`,
+              radiusMeters
+            );
+            
+            // Search again after discovery
+            specificShopResults = await CoffeeShopModel.findSpecificShop(
+              query,
+              locationCoords,
+              radiusMeters
+            );
+          }
+
+          const requestLimit = limit ? parseInt(limit) : 20;
+          const finalResults = specificShopResults
+            .slice(0, requestLimit)
+            .map((shop) => ({
+              ...shop,
+              distance_km: shop.distance_m / 1000,
+            }));
+
+          return c.json({
+            success: true,
+            data: {
+              coffee_shops: finalResults,
+              total_count: finalResults.length,
+              has_more: specificShopResults.length > requestLimit,
+              search_type: "specific_shop",
+              detected_intent: searchIntent
+            },
+          });
+        }
+
+        // General area-based search logic
         // 2. Count existing shops in area
         const existingShopsCount = await CoffeeShopModel.countShopsInArea(
           locationCoords,
@@ -128,6 +180,8 @@ coffeeShops.get("/", async (c) => {
             coffee_shops: finalResults,
             total_count: finalResults.length,
             has_more: filteredResults.length > requestLimit,
+            search_type: "general_area",
+            detected_intent: searchIntent
           },
         });
       } catch (discoveryError) {

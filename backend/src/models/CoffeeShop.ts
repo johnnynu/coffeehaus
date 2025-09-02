@@ -143,6 +143,23 @@ export class CoffeeShopModel {
     if (error) throw error
   }
 
+  static async findSpecificShop(
+    shopName: string,
+    locationCoords: { lat: number; lng: number },
+    radiusMeters: number = 50000
+  ): Promise<(CoffeeShop & { distance_m: number })[]> {
+    const { data, error } = await supabase
+      .rpc('find_specific_shop', {
+        shop_name: shopName,
+        center_lng: locationCoords.lng,
+        center_lat: locationCoords.lat,
+        radius_meters: radiusMeters
+      })
+
+    if (error) throw error
+    return data || []
+  }
+
   // PostGIS geographical queries
   static async countShopsInArea(locationCoords: { lat: number; lng: number }, radiusMeters: number = 50000): Promise<number> {
     const { data, error } = await supabase
