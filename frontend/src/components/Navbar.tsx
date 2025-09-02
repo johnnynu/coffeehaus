@@ -3,7 +3,7 @@
 import type React from "react";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import {
   Search,
   Coffee,
@@ -406,12 +406,12 @@ const Navbar = () => {
     <header className="border-b bg-primary">
       <div className="px-4 py-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
+          <Link to="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
             <Coffee className="w-8 h-8 text-primary-foreground" />
             <h1 className="text-2xl font-bold text-primary-foreground">
               Coffeehaus
             </h1>
-          </div>
+          </Link>
 
           <div className="flex-1 max-w-2xl mx-8">
             <SearchBar navigate={navigate} />

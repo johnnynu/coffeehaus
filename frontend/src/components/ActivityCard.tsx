@@ -30,7 +30,6 @@ interface ActivityCardProps {
 }
 
 export default function ActivityCard({
-  id,
   type,
   user,
   timestamp,

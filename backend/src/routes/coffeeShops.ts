@@ -23,6 +23,7 @@ coffeeShops.get("/", async (c) => {
     const priceLevel = c.req.query("price_level");
     const categories = c.req.query("categories");
     const limit = c.req.query("limit");
+    const offset = c.req.query("offset");
     const locationString = c.req.query("location_string");
 
     // Check for location input
@@ -83,8 +84,9 @@ coffeeShops.get("/", async (c) => {
           }
 
           const requestLimit = limit ? parseInt(limit) : 20;
+          const requestOffset = offset ? parseInt(offset) : 0;
           const finalResults = specificShopResults
-            .slice(0, requestLimit)
+            .slice(requestOffset, requestOffset + requestLimit)
             .map((shop) => ({
               ...shop,
               distance_km: shop.distance_m / 1000,
@@ -95,7 +97,7 @@ coffeeShops.get("/", async (c) => {
             data: {
               coffee_shops: finalResults,
               total_count: finalResults.length,
-              has_more: specificShopResults.length > requestLimit,
+              has_more: specificShopResults.length > (requestOffset + requestLimit),
               search_type: "specific_shop",
               detected_intent: searchIntent
             },
@@ -167,8 +169,9 @@ coffeeShops.get("/", async (c) => {
           );
         }
 
+        const requestOffset = offset ? parseInt(offset) : 0;
         const finalResults = filteredResults
-          .slice(0, requestLimit)
+          .slice(requestOffset, requestOffset + requestLimit)
           .map((shop) => ({
             ...shop,
             distance_km: shop.distance_km,
@@ -179,7 +182,7 @@ coffeeShops.get("/", async (c) => {
           data: {
             coffee_shops: finalResults,
             total_count: finalResults.length,
-            has_more: filteredResults.length > requestLimit,
+            has_more: filteredResults.length > (requestOffset + requestLimit),
             search_type: "general_area",
             detected_intent: searchIntent
           },
