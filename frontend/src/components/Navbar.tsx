@@ -127,8 +127,8 @@ const SearchBar = ({ navigate }: SearchBarProps) => {
 
       setIsLoading(true);
       try {
-        // Get GPS coordinates and prioritize them over location string
-        const gpsCoords = getStoredGPSCoordinates();
+        // Prioritize location string when provided, then fall back to GPS coordinates
+        const gpsCoords = location.trim() ? undefined : getStoredGPSCoordinates();
         
         const response = await apiClient.getAutocompleteSuggestions(
           query,

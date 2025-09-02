@@ -5,7 +5,7 @@ import { Card } from "./ui/card";
 import StarRating from "./StarRating";
 import RateLimitedImage from "./RateLimitedImage";
 import { getThumbnailUrl } from "@/lib/imageUtils";
-import { MapPin, Phone, Clock, Loader2 } from "lucide-react";
+import { MapPin, Phone, Clock, Loader2, Navigation } from "lucide-react";
 
 interface SearchResultsProps {
   results: CoffeeShop[];
@@ -117,18 +117,9 @@ const SearchResults = ({
       {/* Direct matches for the search query */}
       {directMatches.length > 0 && (
         <div className="space-y-4">
-          <div>
-            <h3 className="text-xl font-bold text-foreground">"{query}"</h3>
-            <p className="text-muted-foreground">
-              {directMatches.length} result
-              {directMatches.length !== 1 ? "s" : ""}
-            </p>
-          </div>
-          <div className="space-y-4">
-            {directMatches.map((shop) => (
-              <CoffeeShopCard key={shop.id} shop={shop} />
-            ))}
-          </div>
+          {directMatches.map((shop) => (
+            <CoffeeShopCard key={shop.id} shop={shop} />
+          ))}
         </div>
       )}
 
@@ -284,6 +275,16 @@ const CoffeeShopCard = ({ shop }: CoffeeShopCardProps) => {
                   {shop.price_level && (
                     <span className="text-sm font-medium text-muted-foreground">
                       • {formatPrice(shop.price_level)}
+                    </span>
+                  )}
+                  {shop.distance_km && (
+                    <span className="text-sm font-medium text-muted-foreground">
+                      • {(() => {
+                        const miles = shop.distance_km * 0.621371;
+                        return miles < 0.1 
+                          ? `${Math.round(miles * 5280)}ft away`
+                          : `${miles.toFixed(1)}mi away`;
+                      })()}
                     </span>
                   )}
                 </div>

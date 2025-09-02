@@ -1,15 +1,16 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, MapPin, Phone, Globe, Clock, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import StarRating from "@/components/StarRating";
 import { getLargeImageUrl } from "@/lib/imageUtils";
-import { apiClient, type CoffeeShop, type BusinessHours } from "@/lib/api";
+import { apiClient, type CoffeeShop, type BusinessHours, getStoredGPSCoordinates } from "@/lib/api";
 
 const CoffeeShopDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [coffeeShop, setCoffeeShop] = useState<CoffeeShop | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | undefined>();
@@ -24,7 +25,30 @@ const CoffeeShopDetailPage = () => {
       setError(undefined);
 
       try {
-        const response = await apiClient.getCoffeeShop(id);
+        // Try multiple methods to get the search location
+        let searchLocation: string | null = null;
+        
+        // Method 1: Check referrer URL
+        if (document.referrer && document.referrer.includes('/search')) {
+          try {
+            const referrerUrl = new URL(document.referrer);
+            searchLocation = referrerUrl.searchParams.get('location');
+            console.log('From referrer:', searchLocation);
+          } catch (e) {
+            console.log('Failed to parse referrer URL');
+          }
+        }
+        
+        // Method 2: Check sessionStorage as fallback
+        if (!searchLocation) {
+          searchLocation = sessionStorage.getItem('lastSearchLocation');
+          console.log('From sessionStorage:', searchLocation);
+        }
+        
+        // Use same priority as search: location string first, then GPS
+        const gpsCoords = searchLocation ? undefined : getStoredGPSCoordinates();
+        console.log('Using GPS coords:', gpsCoords, 'Location string:', searchLocation);
+        const response = await apiClient.getCoffeeShop(id, gpsCoords || undefined, searchLocation || undefined);
         
         if (response.success && response.data) {
           setCoffeeShop(response.data);
@@ -391,6 +415,19 @@ const CoffeeShopDetailPage = () => {
                           <StarRating rating={coffeeShop.rating} className="w-4 h-4" />
                           <span className="font-medium">{coffeeShop.rating}</span>
                         </div>
+                      </div>
+                    )}
+                    {coffeeShop.distance_km && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Distance:</span>
+                        <span className="font-medium">
+                          {(() => {
+                            const miles = coffeeShop.distance_km * 0.621371;
+                            return miles < 0.1 
+                              ? `${Math.round(miles * 5280)}ft away`
+                              : `${miles.toFixed(1)}mi away`;
+                          })()}
+                        </span>
                       </div>
                     )}
                   </div>

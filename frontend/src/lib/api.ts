@@ -38,6 +38,7 @@ export interface CoffeeShop {
   created_at: string;
   updated_at: string;
   last_synced_at?: string;
+  distance_km?: number; // Distance from user's location in kilometers
 }
 
 export interface SearchFilters {
@@ -134,8 +135,26 @@ class ApiClient {
     };
   }
 
-  async getCoffeeShop(id: string): Promise<ApiResponse<CoffeeShop>> {
-    return this.request<CoffeeShop>(`/coffee-shops/${id}`);
+  async getCoffeeShop(
+    id: string, 
+    coordinates?: { latitude: number; longitude: number },
+    locationString?: string
+  ): Promise<ApiResponse<CoffeeShop>> {
+    let url = `/coffee-shops/${id}`;
+    const params = new URLSearchParams();
+    
+    if (locationString) {
+      params.append('location_string', locationString);
+    } else if (coordinates) {
+      params.append('lat', coordinates.latitude.toString());
+      params.append('lng', coordinates.longitude.toString());
+    }
+    
+    if (params.toString()) {
+      url += `?${params.toString()}`;
+    }
+    
+    return this.request<CoffeeShop>(url);
   }
 
   async getAutocompleteSuggestions(
@@ -149,12 +168,12 @@ class ApiClient {
       limit: limit.toString(),
     });
 
-    // Prioritize GPS coordinates over location string
-    if (coordinates) {
+    // Prioritize location string when provided, then fall back to GPS coordinates
+    if (location) {
+      params.append('location', location);
+    } else if (coordinates) {
       params.append('lat', coordinates.latitude.toString());
       params.append('lng', coordinates.longitude.toString());
-    } else if (location) {
-      params.append('location', location);
     }
 
     return this.request<Array<{id: string, name: string, address: string}>>(

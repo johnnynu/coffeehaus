@@ -30,20 +30,9 @@ const SearchResultsPage = () => {
     try {
       let response;
       
-      // Check for GPS coordinates first, then fall back to location string
-      const gpsCoords = getStoredGPSCoordinates();
-      
-      if (gpsCoords) {
-        // Use GPS coordinates for precise location-based search
-        response = await apiClient.searchCoffeeShops({
-          query,
-          latitude: gpsCoords.latitude,
-          longitude: gpsCoords.longitude,
-          limit: RESULTS_PER_PAGE,
-          offset: 0
-        });
-      } else if (location.trim()) {
-        // Fall back to location string if no GPS coordinates
+      // Prioritize location string when provided, then fall back to GPS coordinates
+      if (location.trim()) {
+        // Use location string when user explicitly provides one
         await apiClient.discoverCoffeeShopsByLocation(query, location);
         
         response = await apiClient.searchCoffeeShops({ 
@@ -53,12 +42,26 @@ const SearchResultsPage = () => {
           offset: 0
         });
       } else {
-        // No location constraint
-        response = await apiClient.searchCoffeeShops({ 
-          query,
-          limit: RESULTS_PER_PAGE,
-          offset: 0
-        });
+        // Fall back to GPS coordinates if no location string provided
+        const gpsCoords = getStoredGPSCoordinates();
+        
+        if (gpsCoords) {
+          // Use GPS coordinates for precise location-based search
+          response = await apiClient.searchCoffeeShops({
+            query,
+            latitude: gpsCoords.latitude,
+            longitude: gpsCoords.longitude,
+            limit: RESULTS_PER_PAGE,
+            offset: 0
+          });
+        } else {
+          // No location constraint
+          response = await apiClient.searchCoffeeShops({ 
+            query,
+            limit: RESULTS_PER_PAGE,
+            offset: 0
+          });
+        }
       }
       
       if (response.success && response.data) {
@@ -92,18 +95,8 @@ const SearchResultsPage = () => {
     try {
       let response;
       
-      // Check for GPS coordinates first, then fall back to location string
-      const gpsCoords = getStoredGPSCoordinates();
-      
-      if (gpsCoords) {
-        response = await apiClient.searchCoffeeShops({
-          query,
-          latitude: gpsCoords.latitude,
-          longitude: gpsCoords.longitude,
-          limit: RESULTS_PER_PAGE,
-          offset: currentPage * RESULTS_PER_PAGE
-        });
-      } else if (location.trim()) {
+      // Prioritize location string when provided, then fall back to GPS coordinates
+      if (location.trim()) {
         response = await apiClient.searchCoffeeShops({ 
           query, 
           location_string: location,
@@ -111,11 +104,24 @@ const SearchResultsPage = () => {
           offset: currentPage * RESULTS_PER_PAGE
         });
       } else {
-        response = await apiClient.searchCoffeeShops({ 
-          query,
-          limit: RESULTS_PER_PAGE,
-          offset: currentPage * RESULTS_PER_PAGE
-        });
+        // Fall back to GPS coordinates if no location string provided
+        const gpsCoords = getStoredGPSCoordinates();
+        
+        if (gpsCoords) {
+          response = await apiClient.searchCoffeeShops({
+            query,
+            latitude: gpsCoords.latitude,
+            longitude: gpsCoords.longitude,
+            limit: RESULTS_PER_PAGE,
+            offset: currentPage * RESULTS_PER_PAGE
+          });
+        } else {
+          response = await apiClient.searchCoffeeShops({ 
+            query,
+            limit: RESULTS_PER_PAGE,
+            offset: currentPage * RESULTS_PER_PAGE
+          });
+        }
       }
       
       if (response.success && response.data) {
@@ -151,6 +157,10 @@ const SearchResultsPage = () => {
 
   useEffect(() => {
     performInitialSearch();
+    // Store current search location for detail page consistency
+    if (location) {
+      sessionStorage.setItem('lastSearchLocation', location);
+    }
   }, [query, location]);
 
   if (!query) {

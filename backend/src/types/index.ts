@@ -39,6 +39,9 @@ export interface CoffeeShop {
   created_at: string
   updated_at: string
   last_synced_at?: string
+  
+  // Distance from user (calculated at runtime)
+  distance_km?: number
 }
 
 export interface SearchFilters {

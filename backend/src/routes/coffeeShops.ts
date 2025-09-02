@@ -216,6 +216,10 @@ coffeeShops.get("/", async (c) => {
 coffeeShops.get("/:id", async (c) => {
   try {
     const id = c.req.param("id");
+    const lat = c.req.query("lat");
+    const lng = c.req.query("lng");
+    const locationString = c.req.query("location_string");
+    
     const coffeeShop = await CoffeeShopModel.findById(id);
 
     if (!coffeeShop) {
@@ -228,9 +232,33 @@ coffeeShops.get("/:id", async (c) => {
       );
     }
 
+    // Add distance calculation if location provided
+    let shopWithDistance = { ...coffeeShop };
+    let locationCoords: { lat: number; lng: number } | null = null;
+
+    // Prioritize location string like in search
+    if (locationString) {
+      locationCoords = await discoveryService.geocodeLocation(locationString);
+    } else if (lat && lng) {
+      locationCoords = {
+        lat: parseFloat(lat),
+        lng: parseFloat(lng)
+      };
+    }
+
+    if (locationCoords && coffeeShop.latitude && coffeeShop.longitude) {
+      const distance = CoffeeShopModel.calculateDistance(
+        locationCoords.lat, 
+        locationCoords.lng, 
+        coffeeShop.latitude, 
+        coffeeShop.longitude
+      );
+      shopWithDistance.distance_km = distance;
+    }
+
     return c.json({
       success: true,
-      data: coffeeShop,
+      data: shopWithDistance,
     });
   } catch (error) {
     console.error("Coffee shop fetch error:", error);
