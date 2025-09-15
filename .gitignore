@@ -1,0 +1,22 @@
+# Implementation and development docs
+IMPLEMENTATION_ROADMAP.md
+
+# Environment variables
+.env
+.env.local
+.env.production
+
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
